@@ -1,0 +1,21 @@
+ChallengeResponseAuthentication no
+#UsePAM yes
+PrintMotd no
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+PermitTunnel no
+PermitRootLogin no
+#UsePrivilegeSeparation sandbox
+AllowGroups sftp
+PasswordAuthentication {PASSWORD_AUTHENTICATION}
+
+Subsystem sftp internal-sftp
+
+Match Group sftp
+    ChrootDirectory /data
+    X11Forwarding no
+    AllowTcpForwarding no
+    AllowAgentForwarding no
+    PermitTunnel no
+    ForceCommand internal-sftp -d /%u

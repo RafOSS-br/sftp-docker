@@ -1,0 +1,15 @@
+version: '3'
+ 
+services:
+    server:
+        build:
+            context: ./alpine
+            args:
+                PERMIT_PASSWORD_LOGIN: "true"
+        hostname: server
+        ports:
+            - "2222:22"
+        environment:
+            - SSH_USERS=teste1:teste1,teste2:teste2
+            - SSH_PUB_TESTE1=
+            - SSH_PUB_TESTE1=

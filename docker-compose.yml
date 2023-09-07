@@ -10,6 +10,6 @@ services:
         ports:
             - "2222:22"
         environment:
-            - SSH_USERS=teste1:teste1,teste2:teste2
-            - SSH_PUB_TESTE1=
-            - SSH_PUB_TESTE1=
+            - MASTER_PASSWORD="Testee1234567%"
+            - SSH_USERS=teste3:tesste1@asdasDr
+            #- SSH_PUB_TESTE3=ssh-rsa ...

@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+#set -x
+
+# Functions for logging
+success() {
+    printf "\n\033[0;32m${1}\033[0m"
+}
+error() {
+    printf "\n\033[0;31m${1}\033[0m"
+}
+
+source /usr/local/bin/password-manager
+source /usr/local/bin/user-utilities
+
+# Main script starts here
+success "---> Adding users to SFTP server."
+
+handle_master_password
+
+add_users() {
+    declare -A user_seen
+    IFS="," read -ra user_array <<<"${SSH_USERS}"
+    for u in "${user_array[@]}"; do
+        u=$(echo $u | xargs)    # trim
+        [ -z "$u" ] && continue # Ignore empty
+        user=$(echo $u | awk -F':' '{print $1}')
+        passExists=0
+        password=$(echo "$u" | awk -F':' '{ print $2 }')
+
+        if [[ "$u" =~ ":" ]]; then
+            passExists=1
+        fi
+
+        [[ ${user_seen[$user]} == 1 ]] && continue # Skip duplicate entry
+        user_seen[$user]=1
+
+        add_user $user $password $passExists
+        unset user
+    done
+}
+
+main() {
+    success "---> Adding users to SFTP server."
+    handle_master_password
+    add_users
+
+    printf "\n\033[0;44m---> Starting the SSH server.\033[0m\n"
+    /usr/sbin/sshd -D -e
+}
+
+main

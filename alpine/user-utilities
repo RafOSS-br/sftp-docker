@@ -1,0 +1,99 @@
+#!/bin/bash
+# Generate or validate master password
+handle_master_password() {
+    if [ -z "${MASTER_PASSWORD}" ]; then
+        MASTER_PASSWORD="$(generate)"
+    else
+        validate "${MASTER_PASSWORD}"
+    fi
+    echo -e "${MASTER_PASSWORD}\n${MASTER_PASSWORD}" | passwd sftp-user >/dev/null 2>&1
+}
+
+# Add a single user
+add_user() {
+    local user=$1
+    local password=$2
+    local passExists=$3
+
+    # Create user and add in sftp group
+    add_user_group $user
+
+    # Create ssh folder if not exists
+    create_ssh_folder $user
+
+    # Add SSH Public Key
+    add_ssh_public_key $user
+
+    # Set user password
+    set_user_password $user $password $passExists
+
+    # Create data directory
+    create_data_directory $user
+}
+
+# Create user and add to sftp group
+add_user_group() {
+    local user=$1
+    if ! id ${user} &>/dev/null ; then
+        adduser -D -h /home/${user} -s /bin/sh ${user}
+        addgroup ${user} sftp
+        success "User ${user} added!"
+    fi
+}
+
+# Create SSH folder
+create_ssh_folder() {
+    local user=$1
+    if [ ! -d /home/${user}/.ssh ]; then
+        /bin/mkdir /home/${user}/.ssh
+    fi
+}
+
+# Add SSH Public Key
+add_ssh_public_key() {
+    local user=$1
+    local name=$(echo "SSH_PUB_${user}" | tr 'a-z' 'A-Z')
+    if [ ! -z "${!name}" ]; then
+        echo ${!name} >/home/${user}/.ssh/authorized_keys
+        validate_ssh_public_key $user
+    fi
+    unset name
+}
+
+# Validate SSH Public Key
+validate_ssh_public_key() {
+    local user=$1
+    if ssh-keygen -l -f /home/${user}/.ssh/authorized_keys >/dev/null 2>&1; then
+        success "SSH public key is set to '${user}' user"
+    else
+        error "It seems there is an issue with the SSH public key for '${user}' user"
+    fi
+}
+
+# Set user password
+set_user_password() {
+    local user=$1
+    local password=$2
+    local passExists=$3
+    if [[ ! -z $password && $passExists == 1 ]]; then
+        validate "${password}"
+        echo -e "${password}\n${password}" | passwd ${user} >/dev/null 2>&1
+        success "Password is set to '${user}' user"
+    else
+        local passwordGenerated=$(generate)
+        echo -e "$(passwordGenerated)\n$(passwordGenerated)" | passwd ${user} >/dev/null 2>&1
+        unset passwordGenerated
+        error "It seems there is an issue with the password for '${user}' user"
+    fi
+    unset password pass
+}
+
+# Create data directory
+create_data_directory() {
+    local user=$1
+    if [ ! -d /data/${user} ]; then
+        mkdir /data/${user}
+        chown ${user}:root /data/${user}
+        chmod 700 /data/${user}
+    fi
+}

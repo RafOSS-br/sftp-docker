@@ -13,11 +13,6 @@ error() {
 source /usr/local/bin/password-manager
 source /usr/local/bin/user-utilities
 
-# Main script starts here
-success "---> Adding users to SFTP server."
-
-handle_master_password
-
 add_users() {
     declare -A user_seen
     IFS="," read -ra user_array <<<"${SSH_USERS}"
